@@ -2,15 +2,16 @@ import { prisma } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { Role } from '@prisma/client';
+import { validatePassword } from '@/lib/utils';
 
 export async function POST(req: Request) {
   try {
     const { username, email, password } = await req.json();
 
-    if (!password || password.length < 8) {
+    if (!validatePassword(password)) {
       return NextResponse.json(
-        { error: 'Password must be at least 8 characters long.' },
-        { status: 400 } // Bad Request
+        { error: 'Password does not meet the security requirements.' },
+        { status: 400 }
       );
     }
 

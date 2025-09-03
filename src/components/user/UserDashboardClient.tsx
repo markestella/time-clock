@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Session } from 'next-auth';
+import { signOut } from 'next-auth/react';
 import { toast } from 'sonner';
 import {
   Card,
@@ -19,47 +20,44 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { SignOutButton } from '../auth/SignOutButton';
-import { LogIn, LogOut, Coffee, User, Briefcase, History } from 'lucide-react';
+import { LogIn, LogOut, Coffee, User, Briefcase } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ClockEvent } from '@prisma/client';
+import { ActivityHistory } from './ActivityHistory';
 
 interface UserDashboardClientProps {
   user: Session['user'];
   initialLastEvent: string | undefined;
-  activityLog: ClockEvent[];
 }
 
-const getActivityDetails = (type: string) => {
-  switch (type) {
-    case 'IN':
-      return { text: 'Clocked In', Icon: LogIn };
-    case 'OUT':
-      return { text: 'Clocked Out', Icon: LogOut };
-    case 'BREAK_START':
-      return { text: 'Started Break', Icon: Coffee };
-    case 'BREAK_END':
-      return { text: 'Ended Break', Icon: Briefcase };
-    default:
-      return { text: 'Unknown', Icon: History };
-  }
-};
-
-export function UserDashboardClient({ user, initialLastEvent, activityLog }: UserDashboardClientProps) {
+export function UserDashboardClient({ user, initialLastEvent }: UserDashboardClientProps) {
   const router = useRouter();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [lastEvent, setLastEvent] = useState(initialLastEvent);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [activityRefreshKey, setActivityRefreshKey] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -86,6 +84,9 @@ export function UserDashboardClient({ user, initialLastEvent, activityLog }: Use
       }
 
       if (isDialogOpen) setIsDialogOpen(false);
+      
+      setActivityRefreshKey(prevKey => prevKey + 1);
+      
       router.refresh();
     } catch (error) {
       toast.error('An error occurred.');
@@ -125,26 +126,58 @@ export function UserDashboardClient({ user, initialLastEvent, activityLog }: Use
             height={48}
             priority
           />
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Welcome, {user.name}!</h1>
-          </div>
+        </div>
+        <div className="hidden md:block">
+          <h1 className="text-2xl font-bold text-center text-foreground">
+            ThyNetwork Time Tracker
+          </h1>
         </div>
         <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button asChild variant="ghost" size="icon">
-                  <Link href="/profile">
-                    <User className="h-5 w-5" />
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>My Profile</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <SignOutButton />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                <Avatar className="h-9 w-9">
+                  <AvatarFallback>{user.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{user.name}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user.email}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link href="/profile">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>View Profile</span>
+                </Link>
+              </DropdownMenuItem>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer text-destructive focus:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign Out</span>
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure you want to sign out?</AlertDialogTitle>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => signOut({ callbackUrl: '/auth/login' })}>
+                      Sign Out
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -156,7 +189,7 @@ export function UserDashboardClient({ user, initialLastEvent, activityLog }: Use
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-5xl font-semibold font-mono tracking-wider">
+          <p className="text-4xl md:text-5xl font-semibold font-mono tracking-wider tabular-nums">
             {currentTime.toLocaleTimeString('en-US', { hour12: true })}
           </p>
           <p className="text-muted-foreground mt-2">
@@ -212,36 +245,7 @@ export function UserDashboardClient({ user, initialLastEvent, activityLog }: Use
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Your last 10 time clock events.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {activityLog.length > 0 ? (
-              activityLog.map((event) => {
-                const { text, Icon } = getActivityDetails(event.type);
-                return (
-                  <div key={event.id} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center">
-                      <Icon className="h-4 w-4 mr-3 text-muted-foreground" />
-                      <p className="font-medium">{text}</p>
-                    </div>
-                    <p className="text-muted-foreground">
-                      {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                );
-              })
-            ) : (
-              <p className="text-sm text-center text-muted-foreground py-4">
-                No activity to show yet.
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <ActivityHistory key={activityRefreshKey} />
     </div>
   );
 }

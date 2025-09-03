@@ -1,19 +1,17 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { EyeIcon, EyeOffIcon } from 'lucide-react';
+import { EyeIcon, EyeOffIcon, Info } from 'lucide-react';
+import { validatePassword } from '@/lib/utils';
+import { PasswordStrength } from './PasswordStrength';
+import Image from 'next/image';
 
 export function RegisterForm() {
   const router = useRouter();
@@ -26,7 +24,9 @@ export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  
+  const isPasswordValid = validatePassword(formData.password);
   const passwordsMatch = formData.password === formData.confirmPassword;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,26 +35,18 @@ export function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (formData.password.length < 8) {
-      toast.error('Registration Failed', {
-        description: 'PIN must be at least 8 characters long.',
-      });
+    if (!isPasswordValid) {
+      toast.error('Registration Failed', { description: 'PIN does not meet the required criteria.' });
       return;
     }
-
     if (!passwordsMatch) {
-      toast.error('Registration Failed', {
-        description: 'PINs do not match. Please ensure both fields are identical.',
-      });
+      toast.error('Registration Failed', { description: 'PINs do not match. Please try again.' });
       return;
     }
-
+    
     setIsLoading(true);
-
     try {
       const { confirmPassword, ...submissionData } = formData;
-
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -79,9 +71,18 @@ export function RegisterForm() {
 
   return (
     <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle className="text-2xl">Register</CardTitle>
-        <CardDescription>Create a new employee account.</CardDescription>
+      <CardHeader className="text-center">
+        <div className="flex flex-col items-center gap-2 mb-4">
+          <Image
+            src="/thynetwork-logo.png"
+            alt="ThyNetwork Logo"
+            width={64}
+            height={64}
+            priority
+          />
+          <CardTitle className="text-2xl pt-2">Register</CardTitle>
+          <CardDescription>Create account to start time tracking!</CardDescription>
+        </div>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="grid gap-4">
@@ -95,55 +96,68 @@ export function RegisterForm() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="password">PIN (min. 8 characters)</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="password">PIN</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <ul className="list-disc pl-4 text-sm space-y-1">
+                      <li>Minimum of 8 characters</li>
+                      <li>One uppercase letter (A-Z)</li>
+                      <li>One lowercase letter (a-z)</li>
+                      <li>One number (0-9)</li>
+                      <li>One special character (@$!%*?&)</li>
+                    </ul>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 required
                 onChange={handleChange}
+                onFocus={() => setIsPasswordFocused(true)}
+                onBlur={() => setIsPasswordFocused(false)}
                 disabled={isLoading}
                 value={formData.password}
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-0 top-0 h-full px-3 py-1 text-muted-foreground"
-                onClick={() => setShowPassword(!showPassword)}
-              >
+              <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 py-1 text-muted-foreground" onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
               </Button>
             </div>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="confirmPassword">Confirm PIN</Label>
-            <div className="relative">
-              <Input
-                id="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                required
-                onChange={handleChange}
-                disabled={isLoading}
-                value={formData.confirmPassword}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-0 top-0 h-full px-3 py-1 text-muted-foreground"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
-              </Button>
-            </div>
-            {!passwordsMatch && formData.confirmPassword !== '' && (
-              <p className="text-sm text-red-500 mt-1">PINs do not match</p>
+            {(isPasswordFocused || formData.password) && !isPasswordValid && (
+              <PasswordStrength password={formData.password} />
             )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading || (!passwordsMatch && formData.confirmPassword !== '')}>
+          {isPasswordValid && (
+            <div className="grid gap-2">
+              <Label htmlFor="confirmPassword">Confirm PIN</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  required
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  value={formData.confirmPassword}
+                />
+                <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 py-1 text-muted-foreground" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                  {showConfirmPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                </Button>
+              </div>
+              {!passwordsMatch && formData.confirmPassword !== '' && (
+                <p className="text-sm text-red-500 mt-1">PINs do not match</p>
+              )}
+            </div>
+          )}
+
+          <Button type="submit" className="w-full" disabled={isLoading || !isPasswordValid || !passwordsMatch}>
             {isLoading ? 'Creating Account...' : 'Create Account'}
           </Button>
         </form>

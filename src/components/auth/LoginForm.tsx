@@ -16,14 +16,14 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Mail, Lock, EyeIcon, EyeOffIcon } from 'lucide-react';
+import { Lock, EyeIcon, EyeOffIcon, User } from 'lucide-react';
 
 export function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); 
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,14 +31,14 @@ export function LoginForm() {
 
     const result = await signIn('credentials', {
       redirect: false,
-      email,
+      login,
       password,
     });
 
     setIsLoading(false);
 
     if (result?.error) {
-      toast.error('Login Failed', { description: 'Invalid email or PIN.' });
+      toast.error('Login Failed', { description: 'Invalid credentials.' });
     } else {
       toast.success('Login Successful!');
       router.push('/');
@@ -65,24 +65,22 @@ export function LoginForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="grid gap-4">
-          {/* --- Email Input with Icon --- */}
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="login">Email or Username</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
+                id="login"
+                type="text"
+                placeholder="email or username"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={login}
+                onChange={(e) => setLogin(e.target.value)}
                 disabled={isLoading}
                 className="pl-10"
               />
             </div>
           </div>
-
           <div className="grid gap-2">
             <Label htmlFor="password">PIN</Label>
             <div className="relative">
@@ -113,7 +111,7 @@ export function LoginForm() {
         </form>
         
         <div className="mt-4 text-center text-sm">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link href="/auth/register" className="underline">
             Register
           </Link>
