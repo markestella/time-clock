@@ -18,17 +18,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { SignOutButton } from '../auth/SignOutButton';
 import { LogIn, LogOut, Coffee, User, Briefcase, History } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ClockEvent } from '@prisma/client';
 
 interface UserDashboardClientProps {
   user: Session['user'];
   initialLastEvent: string | undefined;
-  activityLog: ClockEvent[]; 
+  activityLog: ClockEvent[];
 }
 
 const getActivityDetails = (type: string) => {
@@ -102,7 +109,6 @@ export function UserDashboardClient({ user, initialLastEvent, activityLog }: Use
   const statusInfo = getStatusInfo();
 
   const isCurrentlyWorking = lastEvent === 'IN' || lastEvent === 'BREAK_END';
-
   const showClockIn = !lastEvent || lastEvent === 'OUT';
   const showClockOut = isCurrentlyWorking;
   const showBreakStart = isCurrentlyWorking;
@@ -110,12 +116,36 @@ export function UserDashboardClient({ user, initialLastEvent, activityLog }: Use
 
   return (
     <div className="container mx-auto p-4 md:p-8 max-w-4xl">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Welcome, {user.name}!</h1>
-          <p className="text-muted-foreground">Davao City, Philippines</p>
+      <div className="flex justify-between items-center mb-8">
+        <div className="flex items-center gap-4">
+          <Image
+            src="/thynetwork-logo.png"
+            alt="ThyNetwork Logo"
+            width={48}
+            height={48}
+            priority
+          />
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Welcome, {user.name}!</h1>
+          </div>
         </div>
-        <SignOutButton />
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button asChild variant="ghost" size="icon">
+                  <Link href="/profile">
+                    <User className="h-5 w-5" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>My Profile</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <SignOutButton />
+        </div>
       </div>
 
       <Card className="w-full text-center mb-8">
