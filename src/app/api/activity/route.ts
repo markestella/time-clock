@@ -12,34 +12,36 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const from = searchParams.get('from');
   const to = searchParams.get('to');
+  const targetUserIdParam = searchParams.get('userId'); 
 
   if (!from || !to) {
     return NextResponse.json({ error: 'Missing date range parameters' }, { status: 400 });
   }
+  
+  let userIdToQuery: number;
+
+  if (targetUserIdParam) {
+    if (session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    userIdToQuery = parseInt(targetUserIdParam);
+  } else {
+    userIdToQuery = parseInt(session.user.id);
+  }
 
   try {
-    const userId = parseInt(session.user.id);
     const startDate = new Date(from);
     const endDate = new Date(to);
 
     const activities = await prisma.clockEvent.findMany({
       where: {
-        userId,
-        timestamp: {
-          gte: startDate,
-          lte: endDate,
-        },
+        userId: userIdToQuery,
+        timestamp: { gte: startDate, lte: endDate },
       },
       include: {
-        message: {
-          select: {
-            content: true,
-          },
-        },
+        message: { include: { questions: { select: { content: true, answer: true } } } },
       },
-      orderBy: {
-        timestamp: 'desc',
-      },
+      orderBy: { timestamp: 'desc' },
     });
 
     return NextResponse.json(activities);

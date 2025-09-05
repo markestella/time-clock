@@ -7,43 +7,50 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  ADMIN
-  EMPLOYEE
-}
-
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  username  String   @unique
-  password  String
-  role      Role
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id          Int          @id @default(autoincrement())
+  email       String       @unique
+  username    String       @unique
+  password    String
+  role        Role
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   clockEvents ClockEvent[]
   messages    Message[]
 }
 
 model ClockEvent {
   id        Int      @id @default(autoincrement())
-  type      String // 'IN', 'OUT', 'BREAK_START', 'BREAK_END'
+  type      String
   timestamp DateTime @default(now())
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-
-  message Message?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   Message?
 }
 
 model Message {
+  id           Int        @id @default(autoincrement())
+  content      String
+  clockEventId Int        @unique
+  createdAt    DateTime   @default(now())
+  userId       Int
+  isRead       Boolean    @default(false)
+  clockEvent   ClockEvent @relation(fields: [clockEventId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions    Question[]
+}
+
+model Question {
   id           Int      @id @default(autoincrement())
   content      String
-  clockEventId Int      @unique
-  clockEvent   ClockEvent @relation(fields: [clockEventId], references: [id])
+  answer       String?
   createdAt    DateTime @default(now())
+  messageId    Int
+  isReadByUser Boolean  @default(false)
+  message      Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
 
-  userId       Int
-  user         User     @relation(fields: [userId], references: [id])
-
-  isRead       Boolean  @default(false)
+enum Role {
+  ADMIN
+  EMPLOYEE
 }

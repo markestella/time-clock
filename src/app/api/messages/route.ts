@@ -9,55 +9,52 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // 1. Get all clock-out messages as before
   const clockOutMessages = await prisma.message.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
-      user: {
-        select: { username: true },
+      user: { select: { username: true } },
+      questions: {
+        select: {
+          id: true,
+          content: true,
+          answer: true,
+        },
+      },
+      _count: {
+        select: {
+          questions: { where: { answer: null } },
+        },
       },
     },
   });
 
-  // 2. Get all clock-in events for today
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // Set to the beginning of the current day
+  today.setHours(0, 0, 0, 0);
 
   const clockInEvents = await prisma.clockEvent.findMany({
-    where: {
-      type: 'IN',
-      timestamp: {
-        gte: today, // Greater than or equal to the start of today
-      },
-    },
+    where: { type: 'IN', timestamp: { gte: today } },
+    include: { user: { select: { username: true } } },
     orderBy: { timestamp: 'desc' },
-    include: {
-      user: {
-        select: { username: true },
-      },
-    },
   });
 
-  // 3. Map both data types into a unified notification format
   const messageNotifications = clockOutMessages.map((msg) => ({
     id: `msg-${msg.id}`,
-    type: 'CLOCK_OUT_MESSAGE',
-    user: msg.user,
-    content: msg.content,
+    type: 'CLOCK_OUT_MESSAGE' as const,
+    data: msg,
     createdAt: msg.createdAt,
-    isRead: msg.isRead,
   }));
 
   const clockInNotifications = clockInEvents.map((evt) => ({
     id: `evt-${evt.id}`,
-    type: 'CLOCK_IN',
-    user: evt.user,
-    content: `Clocked in for the day.`,
+    type: 'CLOCK_IN' as const,
+    data: { 
+      user: evt.user,
+      content: `Clocked in for the day.`,
+      createdAt: evt.timestamp,
+    },
     createdAt: evt.timestamp,
-    isRead: true, // Clock-in events don't have a "read" state, so we treat them as read
   }));
 
-  // 4. Combine, sort by date, and return
   const allNotifications = [...messageNotifications, ...clockInNotifications].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );

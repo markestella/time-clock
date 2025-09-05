@@ -9,15 +9,16 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, LogIn, LogOut, Coffee, Briefcase, MessageSquareText } from 'lucide-react';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { ClockEvent, Message } from '@prisma/client';
+import { ClockEvent, Message, Question } from '@prisma/client';
 
-type ActivityEvent = ClockEvent & {
-  message: Pick<Message, 'content'> | null;
-};
+type QuestionWithAnswer = Pick<Question, 'content' | 'answer'>;
+type MessageWithQuestions = Message & { questions: QuestionWithAnswer[] };
+type ActivityEvent = ClockEvent & { message: MessageWithQuestions | null };
+type GroupedActivities = { [key: string]: ActivityEvent[] };
 
-type GroupedActivities = {
-  [key: string]: ActivityEvent[];
-};
+interface ActivityHistoryProps {
+  userId?: number;
+}
 
 const getActivityDetails = (type: string) => {
   switch (type) {
@@ -29,7 +30,7 @@ const getActivityDetails = (type: string) => {
   }
 };
 
-export function ActivityHistory() {
+export function ActivityHistory({ userId }: ActivityHistoryProps) {
   const [activities, setActivities] = useState<ActivityEvent[]>([]);
   const [groupedActivities, setGroupedActivities] = useState<GroupedActivities>({});
   const [date, setDate] = useState<DateRange | undefined>({
@@ -45,8 +46,13 @@ export function ActivityHistory() {
         const fromISO = date.from.toISOString();
         const toISO = date.to.toISOString();
 
+        let apiUrl = `/api/activity?from=${fromISO}&to=${toISO}`;
+        if (userId) {
+          apiUrl += `&userId=${userId}`;
+        }
+
         try {
-          const res = await fetch(`/api/activity?from=${fromISO}&to=${toISO}`);
+          const res = await fetch(apiUrl);
           const data: ActivityEvent[] = await res.json();
           setActivities(data);
         } catch (error) {
@@ -58,7 +64,7 @@ export function ActivityHistory() {
       }
     };
     fetchActivities();
-  }, [date]);
+  }, [date, userId]);
 
   useEffect(() => {
     const group = activities.reduce((acc, event) => {
@@ -88,7 +94,6 @@ export function ActivityHistory() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <CardTitle>Activity History</CardTitle>
-            <CardDescription>Review your time clock events.</CardDescription>
           </div>
           <Tabs defaultValue="today" onValueChange={handleTabChange} className="w-full sm:w-auto">
             <TabsList className="grid w-full grid-cols-3 sm:w-auto">
@@ -137,7 +142,7 @@ export function ActivityHistory() {
                           <div className="flex items-center gap-1">
                             <Icon className="h-4 w-4 text-muted-foreground" />
                             <p className="font-medium">{text}</p>
-                            {event.type === 'OUT' && event.message?.content && (
+                            {event.type === 'OUT' && event.message && (
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full">
@@ -145,21 +150,28 @@ export function ActivityHistory() {
                                   </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-64 sm:w-80">
-                                  <div className="grid gap-4">
-                                    <div className="space-y-2">
+                                  <div className="space-y-4">
+                                    <div>
                                       <h4 className="font-medium leading-none">Daily Summary</h4>
-                                      <p className="text-sm text-muted-foreground">
-                                        {event.message.content}
-                                      </p>
+                                      <p className="text-sm text-muted-foreground italic">"{event.message.content}"</p>
                                     </div>
+                                    {event.message.questions.length > 0 && (
+                                      <div className="space-y-2">
+                                        <h4 className="font-medium leading-none">Questions & Answers</h4>
+                                        {event.message.questions.map((qa, index) => (
+                                          <div key={index} className="text-sm border-t pt-2">
+                                            <p className="font-semibold text-foreground">Q: {qa.content}</p>
+                                            {qa.answer ? <p className="text-green-600">A: {qa.answer}</p> : <p className="text-yellow-600 italic">A: Awaiting answer...</p>}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                 </PopoverContent>
                               </Popover>
                             )}
                           </div>
-                          <p className="text-muted-foreground">
-                            {format(new Date(event.timestamp), 'h:mm a')}
-                          </p>
+                          <p className="text-muted-foreground">{format(new Date(event.timestamp), 'h:mm a')}</p>
                         </div>
                       </div>
                     );

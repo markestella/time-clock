@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { type, message } = await req.json();
+    const { type, message, questions } = await req.json();
     const userId = parseInt(session.user.id);
 
     if (!['IN', 'OUT', 'BREAK_START', 'BREAK_END'].includes(type)) {
@@ -18,24 +18,31 @@ export async function POST(req: Request) {
     }
 
     const clockEvent = await prisma.clockEvent.create({
-      data: {
-        type,
-        userId,
-      },
+      data: { type, userId },
     });
 
-    if (type === 'OUT' && message) {
-      await prisma.message.create({
+    if (type === 'OUT' && (message || questions?.length > 0)) {
+      const createdMessage = await prisma.message.create({
         data: {
-          content: message,
+          content: message || "No summary provided.",
           clockEventId: clockEvent.id,
           userId,
         },
       });
+
+      if (questions && questions.length > 0) {
+        await prisma.question.createMany({
+          data: questions.map((q: string) => ({
+            content: q,
+            messageId: createdMessage.id,
+          })),
+        });
+      }
     }
 
     return NextResponse.json(clockEvent, { status: 201 });
   } catch (error) {
+    console.log(error);
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }
