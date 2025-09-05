@@ -4,8 +4,13 @@ import { NextResponse } from 'next/server';
 export default withAuth(
   function middleware(req) {
     const { token } = req.nextauth;
+    const { pathname } = req.nextUrl;
 
-    if (token?.role === 'EMPLOYEE') {
+    if (token?.role === 'ADMIN' && pathname.startsWith('/user')) {
+      return NextResponse.redirect(new URL('/admin/dashboard', req.url));
+    }
+
+    if (token?.role === 'EMPLOYEE' && pathname.startsWith('/admin')) {
       return NextResponse.redirect(new URL('/user/dashboard', req.url));
     }
   },
@@ -17,5 +22,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ['/user/:path*'],
+  matcher: ['/admin/:path*', '/user/:path*', '/profile/:path*'],
 };
