@@ -28,10 +28,7 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.user.findFirst({
           where: {
-            OR: [
-              { email: login }, 
-              { username: login }
-            ],
+            OR: [{ email: login }, { username: login }],
           },
         });
 
@@ -39,10 +36,7 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const isPasswordValid = await bcrypt.compare(
-          password,
-          user.password
-        );
+        const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if (!isPasswordValid) {
           return null;
@@ -51,7 +45,7 @@ export const authOptions: NextAuthOptions = {
         return {
           id: user.id.toString(),
           email: user.email,
-          name: user.username,
+          name: `${user.firstName} ${user.lastName}`,
           role: user.role,
         };
       },

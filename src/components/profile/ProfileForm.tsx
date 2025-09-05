@@ -15,6 +15,8 @@ import { PasswordStrength } from '../auth/PasswordStrength';
 export function ProfileForm({ user }: { user: User }) {
   const router = useRouter();
   const [formData, setFormData] = useState({
+    firstName: user.firstName,
+    lastName: user.lastName,
     username: user.username,
     email: user.email,
     password: '',
@@ -36,6 +38,8 @@ export function ProfileForm({ user }: { user: User }) {
     e.preventDefault();
 
     const dataToUpdate: any = {};
+    if (formData.firstName !== user.firstName) dataToUpdate.firstName = formData.firstName;
+    if (formData.lastName !== user.lastName) dataToUpdate.lastName = formData.lastName;
     if (formData.username !== user.username) dataToUpdate.username = formData.username;
     if (formData.email !== user.email) dataToUpdate.email = formData.email;
 
@@ -82,6 +86,16 @@ export function ProfileForm({ user }: { user: User }) {
     <form onSubmit={handleSubmit} className="space-y-6 pt-6 border-t">
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Personal Details</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="firstName">First Name</Label>
+            <Input id="firstName" value={formData.firstName} onChange={handleChange} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lastName">Last Name</Label>
+            <Input id="lastName" value={formData.lastName} onChange={handleChange} />
+          </div>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="username">Username</Label>
           <Input id="username" value={formData.username} onChange={handleChange} />
@@ -154,7 +168,7 @@ export function ProfileForm({ user }: { user: User }) {
           </div>
         )}
       </div>
-
+      
       <Button
         type="submit"
         className="w-full"

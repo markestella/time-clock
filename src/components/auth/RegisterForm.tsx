@@ -16,6 +16,8 @@ import Image from 'next/image';
 export function RegisterForm() {
   const router = useRouter();
   const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
     username: '',
     email: '',
     password: '',
@@ -81,11 +83,21 @@ export function RegisterForm() {
             priority
           />
           <CardTitle className="text-2xl pt-2">Register</CardTitle>
-          <CardDescription>Create account to start time tracking!</CardDescription>
+          <CardDescription>Create a new employee account.</CardDescription>
         </div>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="grid gap-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input id="firstName" required onChange={handleChange} disabled={isLoading} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input id="lastName" required onChange={handleChange} disabled={isLoading} />
+            </div>
+          </div>
           <div className="grid gap-2">
             <Label htmlFor="username">Username</Label>
             <Input id="username" required onChange={handleChange} disabled={isLoading} />

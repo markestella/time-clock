@@ -12,18 +12,12 @@ export async function GET() {
   const clockOutMessages = await prisma.message.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
-      user: { select: { username: true } },
+      user: { select: { firstName: true, lastName: true } },
       questions: {
-        select: {
-          id: true,
-          content: true,
-          answer: true,
-        },
+        select: { id: true, content: true, answer: true },
       },
       _count: {
-        select: {
-          questions: { where: { answer: null } },
-        },
+        select: { questions: { where: { answer: null } } },
       },
     },
   });
@@ -33,22 +27,32 @@ export async function GET() {
 
   const clockInEvents = await prisma.clockEvent.findMany({
     where: { type: 'IN', timestamp: { gte: today } },
-    include: { user: { select: { username: true } } },
+    include: {
+      user: { select: { firstName: true, lastName: true } },
+    },
     orderBy: { timestamp: 'desc' },
   });
 
   const messageNotifications = clockOutMessages.map((msg) => ({
     id: `msg-${msg.id}`,
     type: 'CLOCK_OUT_MESSAGE' as const,
-    data: msg,
+    data: {
+        ...msg,
+        user: {
+            ...msg.user,
+            username: `${msg.user.firstName} ${msg.user.lastName}`
+        }
+    },
     createdAt: msg.createdAt,
   }));
 
   const clockInNotifications = clockInEvents.map((evt) => ({
     id: `evt-${evt.id}`,
     type: 'CLOCK_IN' as const,
-    data: { 
-      user: evt.user,
+    data: {
+      user: {
+        username: `${evt.user.firstName} ${evt.user.lastName}`
+      },
       content: `Clocked in for the day.`,
       createdAt: evt.timestamp,
     },

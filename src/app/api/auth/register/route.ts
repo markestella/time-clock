@@ -6,13 +6,14 @@ import { validatePassword } from '@/lib/utils';
 
 export async function POST(req: Request) {
   try {
-    const { username, email, password } = await req.json();
+    const { firstName, lastName, username, email, password } = await req.json();
+
+    if (!firstName || !lastName) {
+      return NextResponse.json({ error: 'First and last name are required.' }, { status: 400 });
+    }
 
     if (!validatePassword(password)) {
-      return NextResponse.json(
-        { error: 'Password does not meet the security requirements.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Password does not meet the security requirements.' }, { status: 400 });
     }
 
     const existingUser = await prisma.user.findFirst({
@@ -20,16 +21,15 @@ export async function POST(req: Request) {
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'Email or username already exists' },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: 'Email or username already exists' }, { status: 409 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await prisma.user.create({
       data: {
+        firstName,
+        lastName,
         username,
         email,
         password: hashedPassword,
@@ -37,14 +37,8 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json(
-      { message: 'User registered successfully' },
-      { status: 201 }
-    );
+    return NextResponse.json({ message: 'User registered successfully' }, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Something went wrong' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }

@@ -93,7 +93,8 @@ export function UserList({ initialUsers }: Props) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Username</TableHead>
+              <TableHead>Full Name</TableHead>
+              <TableHead className="hidden md:table-cell">Username</TableHead>
               <TableHead className="hidden sm:table-cell">Email</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -104,7 +105,8 @@ export function UserList({ initialUsers }: Props) {
               const status = getStatus(user);
               return (
                 <TableRow key={user.id}>
-                  <TableCell>{user.username}</TableCell>
+                  <TableCell className="font-medium">{`${user.firstName} ${user.lastName}`}</TableCell>
+                  <TableCell className="hidden md:table-cell">{user.username}</TableCell>
                   <TableCell className="hidden sm:table-cell">{user.email}</TableCell>
                   <TableCell>
                     <Badge variant={status.variant}>{status.text}</Badge>
@@ -143,7 +145,7 @@ export function UserList({ initialUsers }: Props) {
       <Dialog open={!!viewingUser} onOpenChange={(isOpen) => !isOpen && setViewingUser(null)}>
         <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>{viewingUser?.username}'s Activity</DialogTitle>
+            <DialogTitle>{viewingUser?.firstName} {viewingUser?.lastName}'s Activity</DialogTitle>
             <DialogDescription>{viewingUser?.email}</DialogDescription>
           </DialogHeader>
           <div className="mt-4 flex-grow overflow-hidden">

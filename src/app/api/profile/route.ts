@@ -15,11 +15,20 @@ export async function PUT(req: Request) {
   try {
     const userId = parseInt(session.user.id);
     const body = await req.json();
-    const { username, email, password } = body;
+    const { firstName, lastName, username, email, password } = body;
 
     const dataToUpdate: Prisma.UserUpdateInput = {};
 
+    if (firstName) dataToUpdate.firstName = firstName;
+    if (lastName) dataToUpdate.lastName = lastName;
+
     if (username) {
+      const usernameExists = await prisma.user.findFirst({
+        where: { username, NOT: { id: userId } },
+      });
+      if (usernameExists) {
+        return NextResponse.json({ error: 'Username is already in use.' }, { status: 409 });
+      }
       dataToUpdate.username = username;
     }
 

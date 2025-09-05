@@ -14,7 +14,13 @@ interface AddUserFormProps {
 }
 
 export function AddUserForm({ onUserAdded }: AddUserFormProps) {
-  const [formData, setFormData] = useState({ username: '', email: '', password: '' });
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    username: '',
+    email: '',
+    password: '',
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
@@ -53,6 +59,16 @@ export function AddUserForm({ onUserAdded }: AddUserFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="firstName">First Name</Label>
+          <Input id="firstName" required onChange={handleChange} />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="lastName">Last Name</Label>
+          <Input id="lastName" required onChange={handleChange} />
+        </div>
+      </div>
       <div className="grid gap-2">
         <Label htmlFor="username">Username</Label>
         <Input id="username" required onChange={handleChange} />

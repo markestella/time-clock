@@ -10,7 +10,7 @@ async function main() {
   console.log('Start seeding...');
 
   const adminEmail = 'admin@thynetwork.com';
-  const adminPin = 'adminPass';
+  const adminPin = 'AdminPass123!'; 
 
   const existingAdmin = await prisma.user.findUnique({
     where: { email: adminEmail },
@@ -21,6 +21,8 @@ async function main() {
 
     await prisma.user.create({
       data: {
+        firstName: 'Admin',
+        lastName: 'User',   
         email: adminEmail,
         username: 'Admin',
         password: hashedPassword,
