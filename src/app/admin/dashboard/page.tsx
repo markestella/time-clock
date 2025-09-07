@@ -37,12 +37,6 @@ async function getDashboardData() {
     },
   });
 
-  console.log(users.map(u => ({
-    id: u.id,
-    latestEvent: u.clockEvents[0]?.type,
-    timestamp: u.clockEvents[0]?.timestamp
-  })));
-
   const activeUsers = users.filter(
     (u) => ['IN', 'BREAK_START', 'BREAK_END'].includes(u.clockEvents[0]?.type)
   ).length;
