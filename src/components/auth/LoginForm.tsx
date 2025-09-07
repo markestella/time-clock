@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -35,14 +35,19 @@ export function LoginForm() {
       password,
     });
 
-    setIsLoading(false);
-
     if (result?.error) {
-      toast.error('Login Failed', { description: 'Invalid credentials.' });
-    } else {
-      toast.success('Login Successful!');
-      router.push('/');
-      router.refresh();
+      toast.error('Login Failed', { description: 'Invalid credentials provided.' });
+      setIsLoading(false);
+    } else if (result?.ok) {
+      toast.success('Login Successful! Redirecting...');
+      
+      const session = await getSession();
+      
+      if (session?.user?.role === 'ADMIN') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/user/dashboard');
+      }
     }
   };
 

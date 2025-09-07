@@ -37,6 +37,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
+import { QuoteManager } from './QuoteManager';
 
 type QuestionForAdmin = Pick<Question, 'id' | 'content' | 'answer'>;
 export type MessageWithRelations = Message & { 
@@ -188,6 +189,10 @@ export function AdminDashboardClient({ user, initialUsers, initialStats, initial
         <DashboardStats title="Employees Clocked In" value={initialStats.activeUsers} icon={Clock} />
         <DashboardStats title="Total Employees" value={initialStats.totalEmployees} icon={Users} />
         <DashboardStats title="Employees On Break" value={initialStats.onBreak} icon={Coffee} />
+      </div>
+      
+      <div className="mb-8">
+        <QuoteManager />
       </div>
 
       <div className="grid gap-8 grid-cols-1 lg:grid-cols-5">

@@ -17,7 +17,8 @@ import { LogOut } from 'lucide-react';
 
 export function SignOutButton() {
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/auth/login' });
+    console.log('sign out triggered')
+    await signOut({ callbackUrl: '/' });
   };
 
   return (

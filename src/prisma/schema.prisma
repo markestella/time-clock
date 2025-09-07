@@ -53,6 +53,14 @@ model Question {
   message      Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
 }
 
+model QuoteOfTheDay {
+  id        Int      @id @default(autoincrement())
+  quote     String
+  author    String
+  date      DateTime @unique
+  createdAt DateTime @default(now())
+}
+
 enum Role {
   ADMIN
   EMPLOYEE

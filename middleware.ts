@@ -1,26 +1,39 @@
-import { withAuth } from 'next-auth/middleware';
-import { NextResponse } from 'next/server';
+import { getToken } from 'next-auth/jwt';
+import { NextRequest, NextResponse } from 'next/server';
 
-export default withAuth(
-  function middleware(req) {
-    const { token } = req.nextauth;
-    const { pathname } = req.nextUrl;
+export async function middleware(req: NextRequest) {
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  const { pathname } = req.nextUrl;
 
-    if (token?.role === 'ADMIN' && pathname.startsWith('/user')) {
-      return NextResponse.redirect(new URL('/admin/dashboard', req.url));
+  const isAuthPage = pathname.startsWith('/auth');
+  const isLandingPage = pathname === '/';
+  const isProtectedRoute = pathname.startsWith('/admin') || pathname.startsWith('/user') || pathname.startsWith('/profile');
+
+  if (token) {
+    if (isLandingPage || isAuthPage) {
+      return NextResponse.redirect(new URL(
+        token.role === 'ADMIN' ? '/admin/dashboard' : '/user/dashboard',
+        req.url
+      ));
     }
 
-    if (token?.role === 'EMPLOYEE' && pathname.startsWith('/admin')) {
+    if (pathname.startsWith('/admin') && token.role !== 'ADMIN') {
       return NextResponse.redirect(new URL('/user/dashboard', req.url));
     }
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => !!token,
-    },
+
+    if (pathname.startsWith('/user') && token.role !== 'EMPLOYEE') {
+      return NextResponse.redirect(new URL('/admin/dashboard', req.url));
+    }
   }
-);
+
+
+  if (!token && isProtectedRoute) {
+    return NextResponse.redirect(new URL('/auth/login', req.url));
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
-  matcher: ['/admin/:path*', '/user/:path*', '/profile/:path*'],
+  matcher: ['/', '/auth/:path*', '/admin/:path*', '/user/:path*', '/profile/:path*'],
 };
