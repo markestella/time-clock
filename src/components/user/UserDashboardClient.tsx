@@ -195,7 +195,7 @@ export function UserDashboardClient({ user, initialLastEvent }: UserDashboardCli
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => signOut({ callbackUrl: '/auth/login' })}>
+                    <AlertDialogAction onClick={() => signOut({ callbackUrl: '/' })}>
                       Sign Out
                     </AlertDialogAction>
                   </AlertDialogFooter>

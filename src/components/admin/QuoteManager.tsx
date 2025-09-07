@@ -13,11 +13,18 @@ export function QuoteManager() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [quote, setQuote] = useState('');
   const [author, setAuthor] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  
+
+  const [isFetching, setIsFetching] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const [quoteExists, setQuoteExists] = useState(false);
 
   useEffect(() => {
     if (date) {
-      setIsLoading(true);
+      setIsFetching(true);
+      setQuote('');
+      setAuthor('');
       const dateString = format(date, 'yyyy-MM-dd');
       fetch(`/api/admin/quote?date=${dateString}`)
         .then(res => res.json())
@@ -25,11 +32,13 @@ export function QuoteManager() {
           if (data) {
             setQuote(data.quote);
             setAuthor(data.author);
+            setQuoteExists(true);
           } else {
             setQuote('');
             setAuthor('');
+            setQuoteExists(false);
           }
-        }).finally(() => setIsLoading(false));
+        }).finally(() => setIsFetching(false));
     }
   }, [date]);
   
@@ -38,7 +47,7 @@ export function QuoteManager() {
       toast.error("Please select a date and fill out both quote and author fields.");
       return;
     }
-    setIsLoading(true);
+    setIsSaving(true);
     try {
       const res = await fetch('/api/admin/quote', {
         method: 'POST',
@@ -47,13 +56,14 @@ export function QuoteManager() {
       });
       if (res.ok) {
         toast.success(`Quote for ${format(date, 'MMMM dd')} has been saved!`);
+        setQuoteExists(true);
       } else {
         throw new Error("Failed to save quote");
       }
     } catch (error) {
       toast.error("An error occurred while saving the quote.");
     } finally {
-      setIsLoading(false);
+      setIsSaving(false); 
     }
   };
 
@@ -70,19 +80,32 @@ export function QuoteManager() {
             selected={date}
             onSelect={setDate}
             className="rounded-md border"
+            disabled={isFetching || isSaving} 
           />
         </div>
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="quote-text">Quote</Label>
-            <Input id="quote-text" placeholder="The only way to do great work..." value={quote} onChange={(e) => setQuote(e.target.value)} />
+            <Input 
+              id="quote-text" 
+              placeholder="The only way to do great work..." 
+              value={quote} 
+              onChange={(e) => setQuote(e.target.value)}
+              disabled={isFetching}
+            />
           </div>
            <div className="space-y-2">
             <Label htmlFor="quote-author">Author</Label>
-            <Input id="quote-author" placeholder="Steve Jobs" value={author} onChange={(e) => setAuthor(e.target.value)} />
+            <Input 
+              id="quote-author" 
+              placeholder="Steve Jobs" 
+              value={author} 
+              onChange={(e) => setAuthor(e.target.value)}
+              disabled={isFetching}
+            />
           </div>
-          <Button onClick={handleSave} disabled={isLoading} className="w-full">
-            {isLoading ? 'Saving...' : 'Save Quote'}
+          <Button onClick={handleSave} disabled={isFetching || isSaving} className="w-full">
+            {isSaving ? 'Saving...' : (quoteExists ? 'Update Quote' : 'Save Quote')}
           </Button>
         </div>
       </CardContent>

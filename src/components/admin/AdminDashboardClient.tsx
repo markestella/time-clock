@@ -174,7 +174,7 @@ export function AdminDashboardClient({ user, initialUsers, initialStats, initial
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => signOut({ callbackUrl: '/auth/login' })}>
+                    <AlertDialogAction onClick={() => signOut({ callbackUrl: '/' })}>
                       Sign Out
                     </AlertDialogAction>
                   </AlertDialogFooter>
